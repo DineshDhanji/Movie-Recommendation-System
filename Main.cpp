@@ -5,8 +5,18 @@
 #include <sstream>
 using namespace std;
 
+// CLASSES PROTOTYPE(S)
+class MovieObject;
+class MovieData;
+class UserObject;
+class UserData;
+class Dataset;
+
 // GLOBAL FUNCTION'S PROTOTYPE(S)
 int Max(int, int);
+void UpdateWhoLikedMovie(MovieObject *, UserObject *);
+void UpdateTheAverage(MovieObject *, UserObject *);
+MovieObject *GetMovieByID(MovieObject *, int);
 
 class MovieObject
 {
@@ -18,7 +28,7 @@ public:
     vector<int> WhoRatedThisMovie;
     MovieObject *left, *right;
 
-    // Constructor(s)
+    // Constructor(s) & Destructor
     MovieObject(int ID, string name)
     {
         this->MovieID = ID;
@@ -35,7 +45,7 @@ class MovieData
 public:
     MovieObject *root;
 
-    // Constructor(s)
+    // Constructor(s) & Destructor
     MovieData()
     {
         this->root = NULL;
@@ -173,11 +183,16 @@ public:
     {
         if (root != NULL)
         {
-            cout << root->MovieID << " " << root->name << " ";
+            cout << root->MovieID << " " << root->name << " R" << root->avg_rating << " ";
             for (int i = 0; i < root->genre.size(); i++)
             {
                 cout << root->genre[i] << ", ";
             }
+            for (int i = 0; i < root->WhoRatedThisMovie.size(); i++)
+            {
+                cout << root->WhoRatedThisMovie[i] << "  ";
+            }
+
             cout << endl;
             PrintData(root->left);
             PrintData(root->right);
@@ -192,7 +207,7 @@ public:
     vector<float> movieRating;
     UserObject *left, *right;
 
-    // Constructor(s)
+    // Constructor(s) & Destructor
     UserObject(int ID)
     {
         this->UserID = ID;
@@ -208,7 +223,7 @@ class UserData
 public:
     UserObject *root;
 
-    // Constructor(s)
+    // Constructor(s) & Destructor
     UserData()
     {
         this->root = NULL;
@@ -370,114 +385,38 @@ public:
     }
 };
 
-// void UpdatingWholikedmovie(MovieObject *root1, UserObject *root2)
-// {
-//     while (root2 != NULL)
-//     {
-//         int size = root2->movieID.size();
-//         for (int i = 0; i < size; i++)
-//         {
-//             // MovieObject* temp = MyMoviesData.root;
-//             while (root1 != NULL)
-//             {
-//                 if (root2->movieID[i] == root1->MovieID)
-//                 {
-//                     root1->WhoRatedThisMovie.push_back(root2->UserID);
-//                     break;
-//                 }
-//                 else if (root2->movieID[i] < root1->MovieID)
-//                 {
-//                     root1 = root1->left;
-//                 }
-//                 else if (root2->movieID[i] > root1->MovieID)
-//                 {
-//                     root1 = root1->left;
-//                 }
-//             }
-//         }
-//         UpdatingWholikedmovie(root1, root2->left);
-//         UpdatingWholikedmovie(root1, root2->right);
-//     }
-// }
+class Dataset
+{
+public:
+    MovieData MyMoviesData;
+    UserData MyUsersData;
 
-// void Updating_average_rating_of_movie(MovieObject *root1, UserObject *root2)
-// {
-//     while (root1 != NULL)
-//     {
-//         int size = root1->WhoRatedThisMovie.size();
-//         for (int i = 0; i < size; i++)
-//         {
-//             while (root2 != NULL)
-//             {
-//                 if (root1->WhoRatedThisMovie[i] == root2->UserID)
-//                 {
-//                     int size2 = root2->movieID.size();
-//                     for (int i = 0; i < size2; i++)
-//                     {
-//                         if (root2->movieID[i] == root1->MovieID)
-//                         {
-//                             root1->avg_rating += root2->movieRating[i];
-//                             break;
-//                         }
-//                     }
-//                     break;
-//                 }
-//                 else if (root1->WhoRatedThisMovie[i] < root2->UserID)
-//                 {
-//                     root2 = root2->left;
-//                 }
-//                 else if (root1->WhoRatedThisMovie[i] > root2->UserID)
-//                 {
-//                     root2 = root2->right;
-//                 }
-//             }
-//         }
-//         Updating_average_rating_of_movie(root1->left, root2);
-//         Updating_average_rating_of_movie(root1->right, root2);
-//     }
-// }
+    // Constructor(s) & Destructor
+    Dataset()
+    {
+        UpdateWhoLikedMovie(MyMoviesData.root, MyUsersData.root);
+        UpdateTheAverage(MyMoviesData.root, MyUsersData.root);
+    }
+    ~Dataset()
+    {
+    }
+};
 
-// void UpdatingWholikedmovie(MovieData MyMoviesData, UserData MyUsersData)
-// {
-//     // int user = MyUsersData.root->UserID;
-//     newfunc(MyMoviesData.root, MyUsersData.root);
-//     // while(MyUsersData.root != NULL)
-//     // {
-//     //     int size = MyUsersData.root->movieID.size();
-//     //     for (int i = 0; i < size; i++)
-//     //     {
-//     //         // MovieObject* temp = MyMoviesData.root;
-//     //         while (MyMoviesData.root != NULL)
-//     //         {
-//     //             if (MyUsersData.root->movieID[i] == MyMoviesData.root->MovieID)
-//     //             {
-//     //                 MyMoviesData.root->WhoRatedThisMovie.push_back(MyUsersData.root->UserID);
-//     //                 break;
-//     //             }
-//     //             else if (MyUsersData.root->movieID[i] < MyMoviesData.root->MovieID)
-//     //             {
-//     //                 MyMoviesData.root = MyMoviesData.root->left;
-//     //             }
-//     //             else if (MyUsersData.root->movieID[i] > MyMoviesData.root->MovieID)
-//     //             {
-//     //                 MyMoviesData.root = MyMoviesData.root->left;
-//     //             }
-//     //         }
-//     //     }
-//     //     MyUsersData.root = MyUsersData.root->left;
-//     }
-//     }
-// }
 int main(int argc, char const *argv[])
 {
-    MovieData MyMoviesData;
-    MyMoviesData.PrintData(MyMoviesData.root);
+    // MovieData MyMoviesData;
+    // MyMoviesData.PrintData(MyMoviesData.root);
+    // cout << endl
+    //      << endl;
+    // UserData MyUsersData;
+    // MyUsersData.PrintData(MyUsersData.root);
+
+    Dataset MyDataset;
+    MyDataset.MyMoviesData.PrintData(MyDataset.MyMoviesData.root);
     cout << endl
          << endl;
-    UserData MyUsersData;
-    MyUsersData.PrintData(MyUsersData.root);
-    // UpdatingWholikedmovie(MyMoviesData.root, MyUsersData.root);
-    // Updating_average_rating_of_movie(MyMoviesData.root, MyUsersData.root);
+    MyDataset.MyUsersData.PrintData(MyDataset.MyUsersData.root);
+
     return 0;
 }
 
@@ -485,4 +424,65 @@ int main(int argc, char const *argv[])
 int Max(int a, int b)
 {
     return a > b ? a : b;
+}
+
+void UpdateWhoLikedMovie(MovieObject *M, UserObject *U)
+{
+    if (M != NULL && U != NULL)
+    {
+        for (int i = 0; i < U->movieID.size(); i++)
+        {
+            MovieObject *tempMovie = GetMovieByID(M, U->movieID[i]);
+            if (tempMovie == NULL)
+            {
+                continue;
+            }
+            tempMovie->WhoRatedThisMovie.push_back(U->UserID);
+        }
+        UpdateWhoLikedMovie(M, U->left);
+        UpdateWhoLikedMovie(M, U->right);
+    }
+}
+void UpdateTheAverage(MovieObject *M, UserObject *U)
+{
+    if (M != NULL && U != NULL)
+    {
+        if (M->WhoRatedThisMovie.size() == 0)
+        {
+            M->avg_rating = 0;
+        }
+        else
+        {
+            float tempTotal = 0;
+            for (int i = 0; i < M->WhoRatedThisMovie.size(); i++)
+            {
+                tempTotal += M->WhoRatedThisMovie[i];
+            }
+            M->avg_rating = tempTotal / float(M->WhoRatedThisMovie.size());
+        }
+        UpdateTheAverage(M->left, U);
+        UpdateTheAverage(M->right, U);
+    }
+}
+
+MovieObject *GetMovieByID(MovieObject *MovieData, int ID)
+{
+
+    MovieObject *temp = MovieData;
+    while (true && temp != NULL)
+    {
+        if (temp->MovieID == ID)
+        {
+            break;
+        }
+        else if (temp->MovieID > ID)
+        {
+            temp = temp->left;
+        }
+        else
+        {
+            temp = temp->right;
+        }
+    }
+    return temp;
 }
