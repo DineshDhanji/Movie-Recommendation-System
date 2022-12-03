@@ -16,7 +16,7 @@ class Dataset;
 int Max(int, int);
 void UpdateWhoLikedMovie(MovieObject *, UserObject *);
 void UpdateTheAverage(MovieObject *, UserObject *);
-MovieObject *GetMovieByID(MovieObject *, int);
+MovieObject *GetMovie(MovieObject *, int);
 
 class MovieObject
 {
@@ -400,23 +400,24 @@ public:
     ~Dataset()
     {
     }
+
+    // Function(s)
+    void CollaborativeSearch(string nameOfTheMovie)
+    {
+        // MovieObject* GivenMovie = GetMovie(3);
+
+    }
 };
 
 int main(int argc, char const *argv[])
 {
-    // MovieData MyMoviesData;
-    // MyMoviesData.PrintData(MyMoviesData.root);
-    // cout << endl
-    //      << endl;
-    // UserData MyUsersData;
-    // MyUsersData.PrintData(MyUsersData.root);
-
     Dataset MyDataset;
     MyDataset.MyMoviesData.PrintData(MyDataset.MyMoviesData.root);
     cout << endl
          << endl;
     MyDataset.MyUsersData.PrintData(MyDataset.MyUsersData.root);
-
+    string nameOfTheMovie = "Toy Story 2";
+    // MyDataset.CollaborativeSearch(nameOfTheMovie);
     return 0;
 }
 
@@ -432,7 +433,7 @@ void UpdateWhoLikedMovie(MovieObject *M, UserObject *U)
     {
         for (int i = 0; i < U->movieID.size(); i++)
         {
-            MovieObject *tempMovie = GetMovieByID(M, U->movieID[i]);
+            MovieObject *tempMovie = GetMovie(M, U->movieID[i]);
             if (tempMovie == NULL)
             {
                 continue;
@@ -465,7 +466,7 @@ void UpdateTheAverage(MovieObject *M, UserObject *U)
     }
 }
 
-MovieObject *GetMovieByID(MovieObject *MovieData, int ID)
+MovieObject *GetMovie(MovieObject *MovieData, int ID)
 {
 
     MovieObject *temp = MovieData;
