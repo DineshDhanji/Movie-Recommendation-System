@@ -17,6 +17,8 @@ int Max(int, int);
 void UpdateWhoLikedMovie(MovieObject *, UserObject *);
 void UpdateTheAverage(MovieObject *, UserObject *);
 MovieObject *GetMovie(MovieObject *, int);
+MovieObject *GetMovie(MovieObject *, string);
+void CollectedMovieData(vector<MovieObject *> &, MovieObject *);
 
 class MovieObject
 {
@@ -404,8 +406,14 @@ public:
     // Function(s)
     void CollaborativeSearch(string nameOfTheMovie)
     {
-        // MovieObject* GivenMovie = GetMovie(3);
-
+        MovieObject *GivenMovie = GetMovie(MyMoviesData.root, nameOfTheMovie);
+        if (GivenMovie == NULL)
+        {
+            cout << "ERROR 510" << endl
+                 << "Sorry, But there is no such movie with name \"" << nameOfTheMovie << "\"";
+            return;
+        }
+        cout << GivenMovie->MovieID << endl;
     }
 };
 
@@ -417,7 +425,7 @@ int main(int argc, char const *argv[])
          << endl;
     MyDataset.MyUsersData.PrintData(MyDataset.MyUsersData.root);
     string nameOfTheMovie = "Toy Story 2";
-    // MyDataset.CollaborativeSearch(nameOfTheMovie);
+    MyDataset.CollaborativeSearch(nameOfTheMovie);
     return 0;
 }
 
@@ -474,7 +482,7 @@ MovieObject *GetMovie(MovieObject *MovieData, int ID)
     {
         if (temp->MovieID == ID)
         {
-            break;
+            return temp;
         }
         else if (temp->MovieID > ID)
         {
@@ -485,5 +493,29 @@ MovieObject *GetMovie(MovieObject *MovieData, int ID)
             temp = temp->right;
         }
     }
-    return temp;
+    return NULL;
+}
+MovieObject *GetMovie(MovieObject *MovieData, string nameOfTheMovie)
+{
+    vector<MovieObject *> temp;
+    CollectedMovieData(temp, MovieData);
+    for (int i = 0; i < temp.size(); i++)
+    {
+        if (temp[i]->name == nameOfTheMovie)
+        {
+            return GetMovie(MovieData, temp[i]->MovieID);
+        }
+    }
+    return NULL;
+}
+
+void CollectedMovieData(vector<MovieObject *> &O, MovieObject *M)
+{
+    if (M != NULL)
+    {
+
+        O.push_back(M);
+        CollectedMovieData(O, M->left);
+        CollectedMovieData(O, M->right);
+    }
 }
