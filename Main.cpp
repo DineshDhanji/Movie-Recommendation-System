@@ -18,6 +18,7 @@ void UpdateWhoLikedMovie(MovieObject *, UserObject *);
 void UpdateTheAverage(MovieObject *, UserObject *);
 MovieObject *GetMovie(MovieObject *, int);
 MovieObject *GetMovie(MovieObject *, string);
+UserObject *GetUser(UserObject *, int);
 void CollectedMovieData(vector<MovieObject *> &, MovieObject *);
 
 class MovieObject
@@ -410,7 +411,7 @@ public:
         if (GivenMovie == NULL)
         {
             cout << "ERROR 510" << endl
-                 << "Sorry, But there is no such movie with name \"" << nameOfTheMovie << "\"";
+                 << "Sorry, But there is no such movie in our database.\"" << nameOfTheMovie << "\"";
             return;
         }
         cout << GivenMovie->MovieID << endl;
@@ -424,7 +425,7 @@ int main(int argc, char const *argv[])
     cout << endl
          << endl;
     MyDataset.MyUsersData.PrintData(MyDataset.MyUsersData.root);
-    string nameOfTheMovie = "Toy Story 2";
+    string nameOfTheMovie = "Resident Evil 2";
     MyDataset.CollaborativeSearch(nameOfTheMovie);
     return 0;
 }
@@ -458,14 +459,22 @@ void UpdateTheAverage(MovieObject *M, UserObject *U)
     {
         if (M->WhoRatedThisMovie.size() == 0)
         {
-            M->avg_rating = 0;
+            M->avg_rating = 0.0;
         }
         else
         {
             float tempTotal = 0;
             for (int i = 0; i < M->WhoRatedThisMovie.size(); i++)
             {
-                tempTotal += M->WhoRatedThisMovie[i];
+                UserObject *TempUserProfile = GetUser(U, M->WhoRatedThisMovie[i]);
+                for (int j = 0; j < TempUserProfile->movieID.size(); j++)
+                {
+                    if (TempUserProfile->movieID[j] == M->MovieID)
+                    {
+                        tempTotal += TempUserProfile->movieRating[j];
+                        break;
+                    }
+                }
             }
             M->avg_rating = tempTotal / float(M->WhoRatedThisMovie.size());
         }
@@ -474,10 +483,10 @@ void UpdateTheAverage(MovieObject *M, UserObject *U)
     }
 }
 
-MovieObject *GetMovie(MovieObject *MovieData, int ID)
+MovieObject *GetMovie(MovieObject *MoviesData, int ID)
 {
 
-    MovieObject *temp = MovieData;
+    MovieObject *temp = MoviesData;
     while (true && temp != NULL)
     {
         if (temp->MovieID == ID)
@@ -495,15 +504,37 @@ MovieObject *GetMovie(MovieObject *MovieData, int ID)
     }
     return NULL;
 }
-MovieObject *GetMovie(MovieObject *MovieData, string nameOfTheMovie)
+MovieObject *GetMovie(MovieObject *MoviesData, string nameOfTheMovie)
 {
     vector<MovieObject *> temp;
-    CollectedMovieData(temp, MovieData);
+    CollectedMovieData(temp, MoviesData);
     for (int i = 0; i < temp.size(); i++)
     {
         if (temp[i]->name == nameOfTheMovie)
         {
-            return GetMovie(MovieData, temp[i]->MovieID);
+            return GetMovie(MoviesData, temp[i]->MovieID);
+        }
+    }
+    return NULL;
+}
+ 
+UserObject *GetUser(UserObject *UserData, int ID)
+{
+
+    UserObject *temp = UserData;
+    while (true && temp != NULL)
+    {
+        if (temp->UserID == ID)
+        {
+            return temp;
+        }
+        else if (temp->UserID > ID)
+        {
+            temp = temp->left;
+        }
+        else
+        {
+            temp = temp->right;
         }
     }
     return NULL;
