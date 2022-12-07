@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -13,13 +14,25 @@ class UserData;
 class Dataset;
 
 // GLOBAL FUNCTION'S PROTOTYPE(S)
+template <class T>
+void PrintVector(vector<T> &temp)
+{
+    for (int i = 0; i < temp.size(); i++)
+    {
+        cout << temp[i] << endl;
+    }
+}
 int Max(int, int);
 void UpdateWhoLikedMovie(MovieObject *, UserObject *);
 void UpdateTheAverage(MovieObject *, UserObject *);
 MovieObject *GetMovie(MovieObject *, int);
+MovieObject *GetMovie(MovieObject *, float);
 MovieObject *GetMovie(MovieObject *, string);
 UserObject *GetUser(UserObject *, int);
 void CollectedMovieData(vector<MovieObject *> &, MovieObject *);
+void Averager(MovieObject *, float, vector<float> &);
+void SaveFavourites(vector<string> &, MovieData);
+void MakeUnique(vector<string> &);
 
 class MovieObject
 {
@@ -90,6 +103,10 @@ public:
             exit(404);
         }
         file.close();
+    }
+    MovieData(int i)
+    {
+        this->root = NULL;
     }
     ~MovieData()
     {
@@ -181,7 +198,65 @@ public:
         }
         return temp;
     }
-
+    void Push(MovieObject newMovie, float rating)
+    {
+        if (root == NULL)
+        {
+            root = new MovieObject(newMovie.MovieID, newMovie.name);
+            root->avg_rating = rating;
+        }
+        else
+        {
+            MovieObject *temp = root;
+            while (true)
+            {
+                if (newMovie.MovieID > temp->MovieID)
+                {
+                    if (temp->right != NULL)
+                    {
+                        temp = temp->right;
+                    }
+                    else
+                    {
+                        temp->right = new MovieObject(newMovie.MovieID, newMovie.name);
+                        temp->right->avg_rating = rating;
+                        break;
+                    }
+                }
+                else if (newMovie.MovieID < temp->MovieID)
+                {
+                    if (temp->left != NULL)
+                    {
+                        temp = temp->left;
+                    }
+                    else
+                    {
+                        temp->left = new MovieObject(newMovie.MovieID, newMovie.name);
+                        temp->left->avg_rating = rating;
+                        break;
+                    }
+                }
+                else
+                {
+                    temp->avg_rating += rating;
+                    break;
+                }
+            }
+        }
+    }
+    void FavSelection(MovieObject *root, vector<string> &temp)
+    {
+        if (root != NULL)
+        {
+            FavSelection(root->left, temp);
+            FavSelection(root->right, temp);
+            for (int i = 0; i < root->genre.size(); i++)
+            {
+                temp.push_back(root->genre[i]);
+            }
+        }
+        MakeUnique(temp);
+    }
     void PrintData(MovieObject *root)
     {
         if (root != NULL)
@@ -281,6 +356,81 @@ public:
     }
 
     // Function(s)
+    void SelectFav(vector<string> temp, vector<string> &AllFav)
+    {
+        system("cls");
+        int choice, i;
+        while (AllFav.size() != 3)
+        {
+            system("cls");
+            cout << "\t\t======================================================" << endl
+                 << "\t\t\tMOVIE RECOMMENDATION SYSTEM (M.R.S.)" << endl
+                 << "\t\t======================================================" << endl;
+            for (i = 1; i < temp.size(); i += 2)
+            {
+                cout << "\t\t   " << i << ") " << temp[i] << "\t\t" << i + 1 << ") " << temp[i + 1] << endl;
+            }
+            cout << "\n\t\tEnter the option of your favourite genre (Select Any Three): ";
+            fflush(stdin);
+            cin >> choice;
+            if (choice >= 1 && choice <= temp.size())
+            {
+                AllFav.push_back(temp[choice]);
+                MakeUnique(AllFav);
+            }
+        }
+    }
+
+    void MovieSelect(vector<string> Fav, MovieObject *node, vector<int> &types1, vector<int> &types2, vector<int> &types3)
+    {
+        bool option1, option2, option3;
+
+        if (node == NULL)
+        {
+            return;
+        }
+
+        // initializing the options
+        option1 = false;
+        option2 = false;
+        option3 = false;
+
+        // checking which are present in the movie genre
+        for (int i = 0; i < node->genre.size(); i++)
+        {
+            if (Fav[0] == node->genre[i])
+            {
+                option1 = true;
+            }
+            else if (Fav[1] == node->genre[i])
+            {
+                option2 = true;
+            }
+            else if (Fav[2] == node->genre[i])
+            {
+                option3 = true;
+            }
+        }
+
+        // pushing in the vectors based on the amount
+        if (option1 && option2 && option3)
+        {
+            types3.push_back(node->MovieID);
+        }
+        else if ((option1 && option2) || (option3 && option2) || (option1 && option3))
+        {
+            types2.push_back(node->MovieID);
+        }
+        else if (option1 || option2 || option3)
+        {
+            types1.push_back(node->MovieID);
+        }
+
+        // calling the child nodes for the same function
+        MovieSelect(Fav, node->left, types1, types2, types3);
+        MovieSelect(Fav, node->right, types1, types2, types3);
+    }
+
     int GetHeight(UserObject *temp)
     {
         if (temp != NULL)
@@ -405,28 +555,217 @@ public:
     }
 
     // Function(s)
-    void CollaborativeSearch(string nameOfTheMovie)
+    void InsertionSort(vector<int> &temp)
+    {
+        for (int i = 1; i < temp.size(); i++)
+        {
+            for (int j = i; j < temp.size(); j++)
+            {
+                MovieObject *movie1 = GetMovie(MyMoviesData.root, temp[j]);
+                MovieObject *movie2 = GetMovie(MyMoviesData.root, temp[j - 1]);
+                if (movie1->avg_rating > movie2->avg_rating)
+                {
+                    int temporary = temp[j - 1];
+                    temp[j - 1] = temp[j];
+                    temp[j] = temporary;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+    void CollaborativeSearch(string nameOfTheMovie, vector<MovieObject *> &MoviesList)
     {
         MovieObject *GivenMovie = GetMovie(MyMoviesData.root, nameOfTheMovie);
         if (GivenMovie == NULL)
         {
-            cout << "ERROR 510" << endl
-                 << "Sorry, But there is no such movie in our database.\"" << nameOfTheMovie << "\"";
+            cout << "\t\tSorry, But there is no such movie in our database. (! - !)" << endl;
             return;
         }
-        cout << GivenMovie->MovieID << endl;
+        vector<UserObject *> SimilarUsers;
+
+        // Getting similar users if they like the given movie.
+        for (int i = 0; i < GivenMovie->WhoRatedThisMovie.size(); i++)
+        {
+            UserObject *TempUserProfile = GetUser(MyUsersData.root, GivenMovie->WhoRatedThisMovie[i]);
+            for (int j = 0; j < TempUserProfile->movieID.size(); j++)
+            {
+                if (TempUserProfile->movieID[j] == GivenMovie->MovieID && TempUserProfile->movieRating[j] >= 3.0)
+                {
+                    SimilarUsers.push_back(TempUserProfile);
+                }
+            }
+        }
+
+        if (SimilarUsers.size() == 0)
+        {
+            // cout << "Bagh Jao" << endl;
+            return;
+        }
+
+        MovieData MovieSelectorTree(69);
+
+        for (int i = 0; i < SimilarUsers.size(); i++)
+        {
+            for (int j = 0; j < SimilarUsers[i]->movieRating.size(); j++)
+            {
+                MovieObject *temp = GetMovie(MyMoviesData.root, SimilarUsers[i]->movieID[j]);
+                if (temp == NULL)
+                {
+                    exit(4546465);
+                }
+                MovieObject temp2 = MovieObject(temp->MovieID, temp->name);
+                MovieSelectorTree.Push(temp2, SimilarUsers[i]->movieRating[j]);
+            }
+        }
+        vector<float> MoviesListRating;
+        Averager(MovieSelectorTree.root, float(SimilarUsers.size()), MoviesListRating);
+
+        // vector<MovieObject *> MoviesList;
+        CollectedMovieData(MoviesList, MovieSelectorTree.root);
+
+        // Insertion Sort
+        for (int i = MoviesList.size() - 1; i >= 0 && i - 1 >= 0; i--)
+        {
+            for (int j = i; j < MoviesList.size(); j++)
+            {
+                if (MoviesList[j - 1]->avg_rating > MoviesList[j]->avg_rating)
+                {
+                    MovieObject *temp = MoviesList[j - 1];
+                    MoviesList[j - 1] = MoviesList[j];
+                    MoviesList[j] = temp;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+    void Initialize()
+    {
+        vector<string> AllGenre;
+        vector<string> Favourite;
+        vector<int> types1;
+        vector<int> types2;
+        vector<int> types3;
+        MyMoviesData.FavSelection(MyMoviesData.root, AllGenre);
+        MyUsersData.SelectFav(AllGenre, Favourite);
+        cout << endl
+             << endl;
+        MyUsersData.MovieSelect(Favourite, MyMoviesData.root, types1, types2, types3);
+        InsertionSort(types1);
+        InsertionSort(types2);
+        InsertionSort(types3);
+
+        vector<int> SelectedMovies;
+        for (int i = 0; i < types3.size(); i++)
+        {
+            SelectedMovies.push_back(types3[i]);
+        }
+        for (int i = 0; i < types2.size(); i++)
+        {
+            SelectedMovies.push_back(types2[i]);
+        }
+        for (int i = 0; i < types1.size(); i++)
+        {
+            SelectedMovies.push_back(types1[i]);
+        }
+
+        vector<MovieObject *> MoviesList;
+        string nameOfTheMovie;
+        cout << "\t\tEnter name of your favorite movie: ";
+        fflush(stdin);
+        getline(cin, nameOfTheMovie);
+        CollaborativeSearch(nameOfTheMovie, MoviesList);
+
+        cout << "\t";
+        for (int i = 0; i < 20; i++)
+        {
+            cout << "====";
+        }
+        cout << endl
+             << endl;
+        cout << "\t";
+        for (int i = 0; i < 8; i++)
+        {
+            cout << "----";
+        }
+        // Printing Content Based Data
+        cout << endl
+             << "\tRECOMMENDED FOR YOU `\\( ^ w ^ )/`" << endl;
+        cout << "\t";
+        for (int i = 0; i < 8; i++)
+        {
+            cout << "----";
+        }
+        cout << endl
+             << "\tGENRE:\t";
+        for (int i = 0; i < Favourite.size(); i++)
+        {
+            cout << Favourite[i] << "   ";
+        }
+        cout << endl
+             << endl;
+        for (int i = 0; i < SelectedMovies.size() && i < 11; i++)
+        {
+            MovieObject *temp = GetMovie(MyMoviesData.root, SelectedMovies[i]);
+            cout << "\t" << temp->name << endl;
+        }
+        cout << endl;
+        if (MoviesList.size() != 0)
+        {
+            cout << "\t";
+            for (int i = 0; i < 20; i++)
+            {
+                cout << "====";
+            }
+            cout << endl
+                 << endl;
+            cout << "\t";
+            for (int i = 0; i < 8; i++)
+            {
+                cout << "----";
+            }
+
+            cout << endl
+                 << "\tPEOPLE ALSO LIKED `\\( $ O $ )/`" << endl;
+            cout << "\t";
+            for (int i = 0; i < 8; i++)
+            {
+                cout << "----";
+            }
+            cout << endl
+                 << endl;
+            // Printing Collaborative Data
+            int y = MoviesList.size() - 1 - 10;
+            int z = MoviesList.size() - 1 - y;
+            for (int i = z; i >= 0; i--)
+            {
+                cout << "\t" << MoviesList[i]->name << endl;
+            }
+        }
+        else
+        {
+            cout << "\t\tCongratulation Buddy !!! You Are Unique `\\(> O <)/`" << endl;
+        }
+        cout << endl
+             << "\t";
+        for (int i = 0; i < 20; i++)
+        {
+            cout << "====";
+        }
+        cout << endl
+             << endl;
     }
 };
 
 int main(int argc, char const *argv[])
 {
     Dataset MyDataset;
-    MyDataset.MyMoviesData.PrintData(MyDataset.MyMoviesData.root);
-    cout << endl
-         << endl;
-    MyDataset.MyUsersData.PrintData(MyDataset.MyUsersData.root);
-    string nameOfTheMovie = "Resident Evil 2";
-    MyDataset.CollaborativeSearch(nameOfTheMovie);
+    MyDataset.Initialize();
     return 0;
 }
 
@@ -504,6 +843,26 @@ MovieObject *GetMovie(MovieObject *MoviesData, int ID)
     }
     return NULL;
 }
+MovieObject *GetMovie(MovieObject *MoviesData, float rating)
+{
+    MovieObject *temp = MoviesData;
+    while (true && temp != NULL)
+    {
+        if (temp->avg_rating == rating)
+        {
+            return temp;
+        }
+        else if (temp->avg_rating > rating)
+        {
+            temp = temp->left;
+        }
+        else
+        {
+            temp = temp->right;
+        }
+    }
+    return NULL;
+}
 MovieObject *GetMovie(MovieObject *MoviesData, string nameOfTheMovie)
 {
     vector<MovieObject *> temp;
@@ -517,7 +876,7 @@ MovieObject *GetMovie(MovieObject *MoviesData, string nameOfTheMovie)
     }
     return NULL;
 }
- 
+
 UserObject *GetUser(UserObject *UserData, int ID)
 {
 
@@ -549,4 +908,23 @@ void CollectedMovieData(vector<MovieObject *> &O, MovieObject *M)
         CollectedMovieData(O, M->left);
         CollectedMovieData(O, M->right);
     }
+}
+void Averager(MovieObject *root, float divisor, vector<float> &MoviesList)
+{
+    if (root != NULL)
+    {
+        root->avg_rating /= divisor;
+        MoviesList.push_back(root->avg_rating);
+        Averager(root->left, divisor, MoviesList);
+        Averager(root->right, divisor, MoviesList);
+    }
+    return;
+}
+
+void MakeUnique(vector<string> &temp)
+{
+    sort(temp.begin(), temp.end());
+    vector<string>::iterator ip;
+    ip = unique(temp.begin(), temp.end());
+    temp.erase(ip, temp.end());
 }
